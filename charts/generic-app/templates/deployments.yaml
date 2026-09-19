@@ -20,7 +20,6 @@ spec:
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  enableServiceLinks: false
   selector:
     matchLabels:
       {{- include "app.selectorLabels" (dict "root" $ "name" $name) | nindent 6 }}
@@ -39,6 +38,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      enableServiceLinks: false
       {{- with $imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
