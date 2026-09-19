@@ -1,0 +1,47 @@
+{{- range $key, $s := .Values.services }}
+{{- if include "app.enabled" $s }}
+{{- $name := include "app.name" (list $key $s) }}
+{{- $selector := $s.selector }}
+{{- if not $selector }}
+  {{- $targetKey := default $key $s.deployment }}
+  {{- $target := index $.Values.deployments $targetKey }}
+  {{- if not $target }}
+    {{- fail (printf "services.%s : aucun deployment %q trouvé (définir services.%s.deployment ou services.%s.selector)" $key $targetKey $key $key) }}
+  {{- end }}
+  {{- $selector = dict "app.kubernetes.io/name" (include "app.name" (list $targetKey $target)) "app.kubernetes.io/part-of" $.Release.Name }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $s.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $s.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ default "ClusterIP" $s.type }}
+  {{- with $s.clusterIP }}
+  clusterIP: {{ . }}
+  {{- end }}
+  {{- with $s.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    {{- range $p := required (printf "services.%s.ports est requis" $key) $s.ports }}
+    - port: {{ required (printf "services.%s.ports[].port est requis" $key) $p.port }}
+      {{- with $p.name }}
+      name: {{ . }}
+      {{- end }}
+      targetPort: {{ default $p.port $p.targetPort }}
+      protocol: {{ default "TCP" $p.protocol }}
+      {{- with $p.nodePort }}
+      nodePort: {{ . }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- toYaml $selector | nindent 4 }}
+{{- end }}
+{{- end }}

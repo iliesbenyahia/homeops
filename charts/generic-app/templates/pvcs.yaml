@@ -1,0 +1,31 @@
+{{- range $key, $p := .Values.persistentVolumeClaims }}
+{{- if include "app.enabled" $p }}
+{{- $name := include "app.name" (list $key $p) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $p.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $p.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml (default (list "ReadWriteOnce") $p.accessModes) | nindent 4 }}
+  {{- if hasKey $p "storageClassName" }}
+  storageClassName: {{ $p.storageClassName | quote }}
+  {{- end }}
+  {{- with $p.volumeMode }}
+  volumeMode: {{ . }}
+  {{- end }}
+  {{- with $p.volumeName }}
+  volumeName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ required (printf "persistentVolumeClaims.%s.size est requis" $key) $p.size | quote }}
+{{- end }}
+{{- end }}

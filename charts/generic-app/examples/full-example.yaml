@@ -1,0 +1,88 @@
+# helm template myapp . -f examples/full-example.yaml
+global:
+  externalSecrets:
+    secretStoreRef:
+      name: vault-backend
+  # À mutualiser dans un fichier de values commun à toutes tes apps
+  expose:
+    profiles:
+      lan:
+        domain: home.example.com
+        certificate:
+          issuerRef: { name: letsencrypt-dns }
+      public:
+        domain: example.com
+        certificate:
+          issuerRef: { name: letsencrypt-dns }
+
+configMaps:
+  web-config:
+    data:
+      APP_ENV: production
+      config.yaml: |
+        feature_x: true
+
+externalSecrets:
+  web-secrets:
+    data:
+      - secretKey: DB_PASSWORD
+        remoteRef:
+          key: apps/web/db
+          property: password
+
+persistentVolumeClaims:
+  web-data:
+    size: 5Gi
+    storageClassName: longhorn
+
+deployments:
+  web:
+    replicas: 2
+    image:
+      repository: ghcr.io/acme/web
+      tag: "1.2.3"
+    checksumConfigMaps: [web-config]
+    podAnnotations:
+      reloader.stakater.com/auto: "true"   # relance le pod si le Secret change
+    ports:
+      - name: http
+        containerPort: 8080
+    envFrom:
+      - configMapRef: { name: web-config }
+      - secretRef: { name: web-secrets }
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { memory: 256Mi }
+    readinessProbe:
+      httpGet: { path: /healthz, port: http }
+    volumeMounts:
+      - { name: data, mountPath: /data }
+    volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: web-data
+
+  worker:
+    image: ghcr.io/acme/web:1.2.3      # forme courte
+    args: ["worker"]
+    envFrom:
+      - secretRef: { name: web-secrets }
+
+services:
+  web:
+    ports:
+      - name: http
+        port: 80
+        targetPort: http
+    expose: lan            # -> https://web.home.example.com, entrypoint websecure-lan
+
+  blog:
+    ports:
+      - port: 8080
+    expose:
+      type: public
+      host: www            # -> https://www.example.com, entrypoint websecure
+
+  redis:                   # pas d'expose : Service interne uniquement
+    ports:
+      - port: 6379

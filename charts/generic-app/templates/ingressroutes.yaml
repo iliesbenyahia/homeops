@@ -1,0 +1,37 @@
+{{- range $key, $r := .Values.ingressRoutes }}
+{{- if include "app.enabled" $r }}
+{{- $name := include "app.name" (list $key $r) }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $r.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $r.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  entryPoints:
+    {{- toYaml (default (list "websecure") $r.entryPoints) | nindent 4 }}
+  routes:
+    {{- range $route := required (printf "ingressRoutes.%s.routes est requis" $key) $r.routes }}
+    - kind: Rule
+      match: {{ required (printf "ingressRoutes.%s.routes[].match est requis" $key) $route.match | quote }}
+      {{- if not (kindIs "invalid" $route.priority) }}
+      priority: {{ $route.priority }}
+      {{- end }}
+      {{- with $route.middlewares }}
+      middlewares:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      services:
+        {{- toYaml (required (printf "ingressRoutes.%s.routes[].services est requis" $key) $route.services) | nindent 8 }}
+    {{- end }}
+  {{- if kindIs "map" $r.tls }}
+  tls:
+    {{- toYaml $r.tls | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

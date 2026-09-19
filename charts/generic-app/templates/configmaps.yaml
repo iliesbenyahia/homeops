@@ -1,0 +1,31 @@
+{{- range $key, $c := .Values.configMaps }}
+{{- if include "app.enabled" $c }}
+{{- $name := include "app.name" (list $key $c) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $c.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $c.annotations "wave" "-1") }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+{{- if $c.immutable }}
+immutable: true
+{{- end }}
+{{- with $c.data }}
+data:
+  {{- range $k, $v := . }}
+  {{ $k | quote }}: {{ $v | toString | toJson }}
+  {{- end }}
+{{- end }}
+{{- with $c.binaryData }}
+binaryData:
+  {{- range $k, $v := . }}
+  {{ $k | quote }}: {{ $v | toString | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

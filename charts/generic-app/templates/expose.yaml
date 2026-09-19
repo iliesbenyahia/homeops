@@ -1,0 +1,162 @@
+{{- /*
+Pour chaque service portant un bloc `expose`, génère :
+  - une IngressRoute Traefik (Host(`<host>.<domain>`) -> le service)
+  - un Certificate cert-manager (sauf certificate.enabled: false)
+Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeables par service.
+*/ -}}
+{{- $g := .Values.global.expose }}
+{{- range $key, $s := .Values.services }}
+{{- if include "app.enabled" $s }}
+{{- $x := $s.expose }}
+{{- if kindIs "string" $x }}{{ $x = dict "type" $x }}{{ end }}
+{{- if kindIs "bool" $x }}{{ if $x }}{{ $x = dict }}{{ end }}{{ end }}
+{{- if kindIs "map" $x }}
+{{- if or (not (hasKey $x "enabled")) $x.enabled }}
+{{- $name := include "app.name" (list $key $s) }}
+
+{{- /* Profil */ -}}
+{{- $type := default $g.defaultProfile $x.type }}
+{{- $prof := index $g.profiles $type }}
+{{- if not $prof }}
+  {{- fail (printf "services.%s.expose : profil %q inconnu (profils disponibles : %s)" $key $type (keys $g.profiles | sortAlpha | join ", ")) }}
+{{- end }}
+
+{{- /* Entrypoints */ -}}
+{{- $entryPoints := default $prof.entryPoints $x.entryPoints }}
+{{- if not $entryPoints }}
+  {{- fail (printf "services.%s.expose : aucun entryPoint (global.expose.profiles.%s.entryPoints ou services.%s.expose.entryPoints)" $key $type $key) }}
+{{- end }}
+
+{{- /* Hostname */ -}}
+{{- $domain := default $prof.domain $x.domain }}
+{{- $host := $x.hostname }}
+{{- if not $host }}
+  {{- if not $domain }}
+    {{- fail (printf "services.%s.expose : aucun domaine (global.expose.profiles.%s.domain, services.%s.expose.domain ou .hostname)" $key $type $key) }}
+  {{- end }}
+  {{- $host = printf "%s.%s" (default $key $x.host) $domain }}
+{{- end }}
+
+{{- /* Port du backend : port explicite, sinon premier port du service */ -}}
+{{- $port := $x.port }}
+{{- if not $port }}
+  {{- $port = (index (required (printf "services.%s.ports est requis" $key) $s.ports) 0).port }}
+{{- end }}
+
+{{- /* Middlewares : ceux du profil + ceux du service */ -}}
+{{- $middlewares := concat (default (list) $prof.middlewares) (default (list) $x.middlewares) }}
+
+{{- /* Certificat */ -}}
+{{- $svcCert := default (dict) $x.certificate }}
+{{- $profCert := default (dict) $prof.certificate }}
+{{- $certEnabled := true }}
+{{- if hasKey $svcCert "enabled" }}{{ $certEnabled = $svcCert.enabled }}
+{{- else if hasKey $profCert "enabled" }}{{ $certEnabled = $profCert.enabled }}{{ end }}
+{{- $cert := merge (dict) $svcCert $profCert }}
+{{- $secretName := default (printf "%s-tls" $name) $cert.secretName }}
+
+{{- /* Redirection HTTP -> HTTPS */ -}}
+{{- $svcRedirect := default (dict) $x.redirect }}
+{{- $profRedirect := default (dict) $prof.redirect }}
+{{- $redirectEnabled := true }}
+{{- if hasKey $svcRedirect "enabled" }}{{ $redirectEnabled = $svcRedirect.enabled }}
+{{- else if hasKey $profRedirect "enabled" }}{{ $redirectEnabled = $profRedirect.enabled }}{{ end }}
+{{- $redirectEntryPoints := default $profRedirect.entryPoints $svcRedirect.entryPoints }}
+{{- if and $redirectEnabled (not $redirectEntryPoints) }}
+  {{- fail (printf "services.%s.expose : redirect.entryPoints requis (global.expose.profiles.%s.redirect.entryPoints) ou redirect.enabled: false" $key $type) }}
+{{- end }}
+
+{{- /* Bloc tls de l'IngressRoute */ -}}
+{{- $tls := default (dict) $x.tls }}
+{{- if $certEnabled }}{{ $tls = merge (dict) $tls (dict "secretName" $secretName) }}{{ end }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $x.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  entryPoints:
+    {{- toYaml $entryPoints | nindent 4 }}
+  routes:
+    - kind: Rule
+      match: {{ printf "Host(`%s`)" $host | quote }}
+      {{- with $middlewares }}
+      middlewares:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      services:
+        - name: {{ $name }}
+          port: {{ $port }}
+  tls:
+    {{- toYaml $tls | nindent 4 }}
+{{- if $certEnabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $cert.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $secretName }}
+  dnsNames:
+    - {{ $host | quote }}
+  issuerRef:
+    {{- toYaml (required (printf "services.%s.expose : issuerRef requis (global.expose.profiles.%s.certificate.issuerRef)" $key $type) $cert.issuerRef) | nindent 4 }}
+  {{- with omit $cert "enabled" "secretName" "issuerRef" "dnsNames" "annotations" }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- if $redirectEnabled }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $name }}-redirect-https
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $x.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name }}-http
+  labels:
+    {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
+  {{- with include "app.annotations" (dict "root" $ "extra" $x.annotations) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  entryPoints:
+    {{- toYaml $redirectEntryPoints | nindent 4 }}
+  routes:
+    - kind: Rule
+      match: {{ printf "Host(`%s`)" $host | quote }}
+      middlewares:
+        - name: {{ $name }}-redirect-https
+      services:
+        - name: noop@internal
+          kind: TraefikService
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

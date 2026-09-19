@@ -1,0 +1,6 @@
+apiVersion: v2
+name: generic-app
+description: Chart générique pour déployer des applications simples (Deployments, Services, IngressRoutes Traefik, PVC, ConfigMaps, ExternalSecrets ESO)
+type: application
+version: 0.2.0
+appVersion: "1.0.0"

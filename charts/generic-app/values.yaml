@@ -1,0 +1,229 @@
+# ---------------------------------------------------------------------------
+# generic-app : chart générique
+#
+# Chaque famille de ressources est une MAP nommée. La clé devient le nom de la
+# ressource Kubernetes (surchargeable via le champ `name`). Exemple :
+#   deployments.web  -> Deployment "web"
+#   services.web     -> Service "web" (cible par défaut le deployment "web")
+#
+# Pour désactiver une ressource dans un override : `enabled: false`
+# (ou la mettre à `null`, Helm la supprime de la map).
+# ---------------------------------------------------------------------------
+
+global:
+  # Labels / annotations ajoutés à TOUTES les ressources
+  labels: {}
+  annotations: {}
+
+  # imagePullSecrets par défaut (surchargeable par deployment)
+  imagePullSecrets: []
+  #  - name: registry-creds
+
+  argocd:
+    # Ajoute la sync-wave "-1" aux ConfigMaps et ExternalSecrets pour qu'ils
+    # soient créés avant les Deployments. (Les PVC n'ont volontairement pas de
+    # wave : un PVC WaitForFirstConsumer reste Pending et bloquerait la wave.)
+    syncWaves: true
+
+  # Profils d'exposition, utilisés par services.<clé>.expose.type
+  expose:
+    defaultProfile: lan
+    profiles:
+      lan:
+        entryPoints: [websecure]     # entrypoint Traefik dédié au LAN
+        domain: "ibenyahia.fr"                       # <-- À RENSEIGNER (ex: home.example.com)
+        middlewares: []                  # appliqués à toutes les routes du profil
+        redirect:                        # redirection http -> https
+          entryPoints: [web]         # entrypoint HTTP du LAN
+          # enabled: false               # pour désactiver la redirection
+        certificate:
+          issuerRef:
+            name: "letsencrypt-cloudflare"                     # <-- À RENSEIGNER (ex: letsencrypt-dns)
+            kind: ClusterIssuer
+      public:
+        entryPoints: [websecure-pub]
+        domain: "ibenyahia.fr"                       # <-- À RENSEIGNER (ex: example.com)
+        middlewares: []
+        redirect:
+          entryPoints: [web-pub]             # entrypoint HTTP public
+        certificate:
+          issuerRef: 
+            name: "letsencrypt-cloudflare"
+            kind: ClusterIssuer
+
+  externalSecrets:
+    apiVersion: external-secrets.io/v1
+    refreshInterval: 1h
+    # Store commun, surchargeable par ExternalSecret (fusion champ par champ)
+    secretStoreRef:
+      name: bitwarden-secretsmanager       # <-- À RENSEIGNER (ex: vault-backend)
+      kind: ClusterSecretStore
+
+# ---------------------------------------------------------------------------
+# Deployments
+# ---------------------------------------------------------------------------
+deployments: {}
+  # web:
+  #   enabled: true
+  #   name: web                    # optionnel, défaut = clé
+  #   replicas: 1
+  #   revisionHistoryLimit: 3
+  #   strategy: {}
+  #   labels: {}
+  #   annotations: {}
+  #   podLabels: {}
+  #   podAnnotations: {}           # ex: reloader.stakater.com/auto: "true"
+  #   # ConfigMaps (clés de .configMaps) dont le contenu déclenche un rollout
+  #   checksumConfigMaps: []
+  #   imagePullSecrets: []
+  #   serviceAccountName: ""
+  #   priorityClassName: ""
+  #   terminationGracePeriodSeconds: 30
+  #   podSecurityContext: {}
+  #
+  #   # image : chaîne complète OU dict
+  #   image:
+  #     repository: ghcr.io/acme/web
+  #     tag: "1.2.3"               # ou digest: sha256:...
+  #     pullPolicy: IfNotPresent
+  #
+  #   containerName: ""            # défaut = nom du deployment
+  #   command: []
+  #   args: []
+  #   workingDir: ""
+  #   ports:
+  #     - name: http
+  #       containerPort: 8080
+  #   env:                         # syntaxe Kubernetes native
+  #     - name: LOG_LEVEL
+  #       value: info
+  #   envFrom:
+  #     - configMapRef: { name: web-config }    # ConfigMap "web-config"
+  #     - secretRef:    { name: web-secrets }   # Secret créé par l'ExternalSecret "web-secrets"
+  #   resources:
+  #     requests: { cpu: 100m, memory: 128Mi }
+  #     limits:   { memory: 256Mi }
+  #   securityContext: {}
+  #   startupProbe: {}
+  #   livenessProbe: {}
+  #   readinessProbe: {}
+  #   lifecycle: {}
+  #   volumeMounts:
+  #     - { name: data, mountPath: /data }
+  #   volumes:
+  #     - name: data
+  #       persistentVolumeClaim:
+  #         claimName: web-data    # = clé de persistentVolumeClaims
+  #   initContainers: []
+  #   sidecars: []                 # conteneurs additionnels (liste K8s native)
+  #   nodeSelector: {}
+  #   affinity: {}
+  #   tolerations: []
+  #   topologySpreadConstraints: []
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services: {}
+  # web:
+  #   enabled: true
+  #   type: ClusterIP
+  #   deployment: web              # défaut = même clé que le service
+  #   # selector: {}               # remplace la sélection automatique
+  #   labels: {}
+  #   annotations: {}
+  #   ports:
+  #     - name: http
+  #       port: 80
+  #       targetPort: http         # défaut = port
+  #       protocol: TCP
+  #
+  #   # Exposition : crée une IngressRoute + un Certificate cert-manager.
+  #   # Forme courte : expose: lan   (ou expose: public, ou expose: true = profil par défaut)
+  #   expose:
+  #     type: lan                  # nom d'un profil de global.expose.profiles
+  #     host: web                  # sous-domaine, défaut = clé du service -> web.<domain>
+  #     # hostname: web.autre.tld  # FQDN complet (ignore host et domain)
+  #     # domain: autre.tld        # remplace le domaine du profil
+  #     # port: 80                 # port du backend, défaut = 1er port du service
+  #     # entryPoints: [websecure] # remplace ceux du profil
+  #     # middlewares:             # s'ajoutent à ceux du profil
+  #     #   - name: security-headers
+  #     # tls: {}                  # champs tls supplémentaires (ex: options)
+  #     # redirect:
+  #     #   enabled: false         # pas de redirection http -> https pour ce service
+  #     #   entryPoints: [web]     # remplace ceux du profil
+  #     # certificate:
+  #     #   enabled: false         # pas de Certificate (tls sans secretName)
+  #     #   secretName: web-tls    # défaut = <service>-tls
+  #     #   issuerRef: { name: autre-issuer, kind: ClusterIssuer }
+  #     #   duration: 2160h        # tout champ de Certificate.spec est accepté
+
+# ---------------------------------------------------------------------------
+# IngressRoutes Traefik manuelles (cas avancés uniquement : multi-routes,
+# path-based, etc.). Pour le cas courant, utiliser services.<clé>.expose.
+# ---------------------------------------------------------------------------
+ingressRoutes: {}
+  # web:
+  #   enabled: true
+  #   entryPoints: [websecure]     # défaut
+  #   labels: {}
+  #   annotations: {}
+  #   routes:
+  #     - match: Host(`web.example.com`)
+  #       priority: 10             # optionnel
+  #       middlewares:
+  #         - name: security-headers
+  #       services:
+  #         - name: web            # = clé de services
+  #           port: 80
+  #   tls:                         # omis = pas de bloc tls ; {} = certificat par défaut
+  #     certResolver: letsencrypt
+
+# ---------------------------------------------------------------------------
+# PersistentVolumeClaims
+# ---------------------------------------------------------------------------
+persistentVolumeClaims: {}
+  # web-data:
+  #   enabled: true
+  #   size: 10Gi
+  #   accessModes: [ReadWriteOnce]
+  #   storageClassName: longhorn   # "" = pas de classe ; omis = classe par défaut du cluster
+  #   volumeMode: Filesystem
+  #   volumeName: ""
+  #   labels: {}
+  #   annotations: {}
+
+# ---------------------------------------------------------------------------
+# ConfigMaps
+# ---------------------------------------------------------------------------
+configMaps: {}
+  # web-config:
+  #   enabled: true
+  #   immutable: false
+  #   data:
+  #     APP_ENV: production
+  #     config.yaml: |
+  #       key: value
+  #   binaryData: {}               # valeurs déjà encodées en base64
+
+# ---------------------------------------------------------------------------
+# ExternalSecrets (ESO)
+# Le Secret généré porte le nom de la clé (target.name pour le changer).
+# ---------------------------------------------------------------------------
+externalSecrets: {}
+  # web-secrets:
+  #   enabled: true
+  #   refreshInterval: 1h          # défaut = global.externalSecrets.refreshInterval
+  #   secretStoreRef: {}           # ex: { name: autre-store, kind: SecretStore }
+  #   target:                      # défaut : { name: <clé>, creationPolicy: Owner }
+  #     template:
+  #       type: Opaque
+  #   data:
+  #     - secretKey: DB_PASSWORD
+  #       remoteRef:
+  #         key: apps/web/db
+  #         property: password
+  #   dataFrom:
+  #     - extract:
+  #         key: apps/web/extra
