@@ -7,7 +7,7 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
   - git:
-      repoURL: https://github.com/iliesbenyahia/homelab.git
+      repoURL: https://github.com/iliesbenyahia/homeops.git
       revision: HEAD
       directories:
       - path: apps/generic-apps/*
@@ -17,7 +17,7 @@ spec:
     spec:
       project: "default"
       source:
-        repoURL: https://github.com/iliesbenyahia/homelab.git
+        repoURL: https://github.com/iliesbenyahia/homeops.git
         targetRevision: HEAD
         path: 'charts/generic-app'
       destination:
