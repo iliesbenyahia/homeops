@@ -75,7 +75,7 @@ services:
       - port: 6379
         targetPort: 6379
 
-  paperless-svc:
+  paperless:
     enabled: true
     ports:
       - port: 8000
