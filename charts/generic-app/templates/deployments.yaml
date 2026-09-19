@@ -38,7 +38,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      enableServiceLinks: false
       {{- with $imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -142,5 +141,6 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      enableServiceLinks: false
 {{- end }}
 {{- end }}
