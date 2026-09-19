@@ -38,6 +38,7 @@ deployments:
     envFrom:
     - secretRef:
         name: paperless-secret
+    enableServiceLinks: false
   valkey:
     image:
       repository: valkey/valkey
