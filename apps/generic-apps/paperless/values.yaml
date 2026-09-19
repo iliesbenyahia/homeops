@@ -69,7 +69,7 @@ externalSecrets:
           property: password
 
 services:
-  broker:
+  valkey:
     enabled: true
     ports:
       - port: 6379

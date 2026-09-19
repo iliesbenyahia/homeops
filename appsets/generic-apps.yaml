@@ -16,13 +16,16 @@ spec:
       name: '{{.path.basename}}'
     spec:
       project: "default"
-      source:
-        repoURL: https://github.com/iliesbenyahia/homeops.git
+      sources:
+      - repoURL: https://github.com/iliesbenyahia/homeops.git
+        ref: 'values'
+        targetRevision: HEAD
+      - repoURL: https://github.com/iliesbenyahia/homeops.git
         targetRevision: HEAD
         path: 'charts/generic-app'
         helm:
           valueFiles:
-            - '{{path}}/values.yaml'
+            - '$values/apps/generic-apps/{{.path.basename}}/values.yaml'
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{.path.basename}}'
