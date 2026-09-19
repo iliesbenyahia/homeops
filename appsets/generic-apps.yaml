@@ -20,6 +20,9 @@ spec:
         repoURL: https://github.com/iliesbenyahia/homeops.git
         targetRevision: HEAD
         path: 'charts/generic-app'
+        helm:
+          valueFiles:
+            - '{{path}}/values.yaml'
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{.path.basename}}'
