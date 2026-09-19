@@ -20,6 +20,7 @@ spec:
   strategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  enableServiceLinks: false
   selector:
     matchLabels:
       {{- include "app.selectorLabels" (dict "root" $ "name" $name) | nindent 6 }}
