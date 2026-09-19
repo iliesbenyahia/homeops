@@ -19,12 +19,13 @@ global:
   imagePullSecrets: []
   #  - name: registry-creds
 
+
   argocd:
     # Ajoute la sync-wave "-1" aux ConfigMaps et ExternalSecrets pour qu'ils
     # soient créés avant les Deployments. (Les PVC n'ont volontairement pas de
     # wave : un PVC WaitForFirstConsumer reste Pending et bloquerait la wave.)
     syncWaves: true
-
+    
   # Profils d'exposition, utilisés par services.<clé>.expose.type
   expose:
     defaultProfile: lan

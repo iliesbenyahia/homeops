@@ -76,12 +76,13 @@ services:
         targetPort: http
     expose: lan            # -> https://web.home.example.com, entrypoint websecure-lan
 
-  blog:
+  blog:                    # exposé deux fois : LAN + public
     ports:
       - port: 8080
     expose:
-      type: public
-      host: www            # -> https://www.example.com, entrypoint websecure
+      - lan                # -> https://blog.home.example.com (blog-lan)
+      - type: public
+        host: www          # -> https://www.example.com (blog-public)
 
   redis:                   # pas d'expose : Service interne uniquement
     ports:

@@ -1,18 +1,34 @@
 {{- /*
-Pour chaque service portant un bloc `expose`, génère :
-  - une IngressRoute Traefik (Host(`<host>.<domain>`) -> le service)
+Pour chaque service portant un bloc `expose`, génère pour chaque exposition :
+  - une IngressRoute HTTPS Traefik (Host(`<host>.<domain>`) -> le service)
   - un Certificate cert-manager (sauf certificate.enabled: false)
-Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeables par service.
+  - une IngressRoute HTTP + un Middleware de redirection vers HTTPS (sauf redirect.enabled: false)
+`expose` peut être : une chaîne (lan), true, un objet, ou une LISTE de ces formes
+(plusieurs expositions du même service, ex: lan + public).
+Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeables par exposition.
 */ -}}
 {{- $g := .Values.global.expose }}
 {{- range $key, $s := .Values.services }}
 {{- if include "app.enabled" $s }}
-{{- $x := $s.expose }}
+{{- $name := include "app.name" (list $key $s) }}
+
+{{- /* Normalisation de expose en liste d'expositions */ -}}
+{{- $raw := $s.expose }}
+{{- $multi := kindIs "slice" $raw }}
+{{- $exposures := list }}
+{{- if $multi }}
+  {{- $exposures = $raw }}
+{{- else if or (kindIs "map" $raw) (kindIs "string" $raw) (and (kindIs "bool" $raw) $raw) }}
+  {{- $exposures = list $raw }}
+{{- end }}
+{{- $seen := dict }}
+
+{{- range $exposure := $exposures }}
+{{- $x := $exposure }}
 {{- if kindIs "string" $x }}{{ $x = dict "type" $x }}{{ end }}
 {{- if kindIs "bool" $x }}{{ if $x }}{{ $x = dict }}{{ end }}{{ end }}
 {{- if kindIs "map" $x }}
 {{- if or (not (hasKey $x "enabled")) $x.enabled }}
-{{- $name := include "app.name" (list $key $s) }}
 
 {{- /* Profil */ -}}
 {{- $type := default $g.defaultProfile $x.type }}
@@ -20,6 +36,14 @@ Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeabl
 {{- if not $prof }}
   {{- fail (printf "services.%s.expose : profil %q inconnu (profils disponibles : %s)" $key $type (keys $g.profiles | sortAlpha | join ", ")) }}
 {{- end }}
+
+{{- /* Nom des ressources : <service>, ou <service>-<type> (ou -<id>) si plusieurs expositions */ -}}
+{{- $resName := $name }}
+{{- if $multi }}{{ $resName = printf "%s-%s" $name (default $type $x.id) }}{{ end }}
+{{- if hasKey $seen $resName }}
+  {{- fail (printf "services.%s.expose : deux expositions produisent le même nom %q (ajouter un champ 'id' unique à l'une d'elles)" $key $resName) }}
+{{- end }}
+{{- $_ := set $seen $resName true }}
 
 {{- /* Entrypoints */ -}}
 {{- $entryPoints := default $prof.entryPoints $x.entryPoints }}
@@ -43,7 +67,7 @@ Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeabl
   {{- $port = (index (required (printf "services.%s.ports est requis" $key) $s.ports) 0).port }}
 {{- end }}
 
-{{- /* Middlewares : ceux du profil + ceux du service */ -}}
+{{- /* Middlewares : ceux du profil + ceux de l'exposition */ -}}
 {{- $middlewares := concat (default (list) $prof.middlewares) (default (list) $x.middlewares) }}
 
 {{- /* Certificat */ -}}
@@ -53,7 +77,7 @@ Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeabl
 {{- if hasKey $svcCert "enabled" }}{{ $certEnabled = $svcCert.enabled }}
 {{- else if hasKey $profCert "enabled" }}{{ $certEnabled = $profCert.enabled }}{{ end }}
 {{- $cert := merge (dict) $svcCert $profCert }}
-{{- $secretName := default (printf "%s-tls" $name) $cert.secretName }}
+{{- $secretName := default (printf "%s-tls" $resName) $cert.secretName }}
 
 {{- /* Redirection HTTP -> HTTPS */ -}}
 {{- $svcRedirect := default (dict) $x.redirect }}
@@ -73,7 +97,7 @@ Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeabl
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ $name }}
+  name: {{ $resName }}
   labels:
     {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
   {{- with include "app.annotations" (dict "root" $ "extra" $x.annotations) }}
@@ -100,7 +124,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ $name }}
+  name: {{ $resName }}
   labels:
     {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
   {{- with include "app.annotations" (dict "root" $ "extra" $cert.annotations) }}
@@ -122,7 +146,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: {{ $name }}-redirect-https
+  name: {{ $resName }}-redirect-https
   labels:
     {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
   {{- with include "app.annotations" (dict "root" $ "extra" $x.annotations) }}
@@ -137,7 +161,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ $name }}-http
+  name: {{ $resName }}-http
   labels:
     {{- include "app.labels" (dict "root" $ "name" $name "extra" $x.labels) | nindent 4 }}
   {{- with include "app.annotations" (dict "root" $ "extra" $x.annotations) }}
@@ -151,10 +175,11 @@ spec:
     - kind: Rule
       match: {{ printf "Host(`%s`)" $host | quote }}
       middlewares:
-        - name: {{ $name }}-redirect-https
+        - name: {{ $resName }}-redirect-https
       services:
         - name: noop@internal
           kind: TraefikService
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
