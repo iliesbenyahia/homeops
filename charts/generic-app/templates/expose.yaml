@@ -134,7 +134,7 @@ metadata:
 spec:
   secretName: {{ $secretName }}
   dnsNames:
-    - {{ $host | quote }}
+    - '*.ibenyahia.fr'
   issuerRef:
     {{- toYaml (required (printf "services.%s.expose : issuerRef requis (global.expose.profiles.%s.certificate.issuerRef)" $key $type) $cert.issuerRef) | nindent 4 }}
   {{- with omit $cert "enabled" "secretName" "issuerRef" "dnsNames" "annotations" }}
