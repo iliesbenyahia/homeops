@@ -3,12 +3,18 @@ externalSecrets:
     data:
       - secretKey: GITHUB_COM_USER
         remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
           key: github-com-user
       - secretKey: GITHUB_COM_TOKEN
         remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
           key: github-com-token
       - secretKey: RENOVATE_TOKEN
         remoteRef:
+          conversionStrategy: Default
+          decodingStrategy: None
           key: github-com-token
 
 services:
