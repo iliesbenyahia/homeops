@@ -6,16 +6,19 @@ externalSecrets:
           conversionStrategy: Default
           decodingStrategy: None
           key: github-com-user
+          metadataPolicy: None
       - secretKey: GITHUB_COM_TOKEN
         remoteRef:
           conversionStrategy: Default
           decodingStrategy: None
           key: github-com-token
+          metadataPolicy: None
       - secretKey: RENOVATE_TOKEN
         remoteRef:
           conversionStrategy: Default
           decodingStrategy: None
           key: github-com-token
+          metadataPolicy: None
 
 services:
   renovate-operator:
