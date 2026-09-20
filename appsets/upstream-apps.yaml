@@ -17,27 +17,28 @@ spec:
     spec:
       project: "default"
       sources:
-        - repoURL: "{{ .chart.repoURL }}"
-          chart: "{{ .chart.name }}"
-          targetRevision: "{{ .chart.version }}"
-          helm:
-            releaseName: "{{ .name }}"
-            valueFiles:
-              - "$values/apps/upstream/{{ .name }}/values.yaml"
-        - repoURL: https://github.com/<vous>/<votre-depot>.git
-          targetRevision: HEAD
-          path: charts/generic-app
-          helm:
-            releaseName: "{{ .name }}-extras"
-            ignoreMissingValueFiles: true
-            valueFiles:
-              - "$values/apps/upstream/{{ .name }}/extras.yaml"
-        - repoURL: https://github.com/<vous>/<votre-depot>.git
-          targetRevision: HEAD
-          ref: values
+      - repoURL: "{{ .chart.repoURL }}"
+        chart: "{{ .chart.name }}"
+        targetRevision: "{{ .chart.version }}"
+        helm:
+          releaseName: "{{ .name }}"
+          valueFiles:
+            - "$values/apps/upstream/{{ .name }}/values.yaml"
+      - repoURL: https://github.com/iliesbenyahia/homeops.git
+        targetRevision: HEAD
+        path: charts/generic-app
+        helm:
+          releaseName: "{{ .name }}-extras"
+          ignoreMissingValueFiles: true
+          valueFiles:
+            - "$values/apps/upstream/{{ .name }}/extras.yaml"
+      - repoURL: https://github.com/iliesbenyahia/homeops.git
+        targetRevision: HEAD
+        ref: values
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{.path.basename}}'
-      syncOptions:
+      syncPolicy:
+        syncOptions:
         - CreateNamespace=true
         - ServerSideApply=true
