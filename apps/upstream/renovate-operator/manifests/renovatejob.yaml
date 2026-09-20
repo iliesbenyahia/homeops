@@ -1,0 +1,14 @@
+apiVersion: renovate-operator.mogenius.com/v1alpha1
+kind: RenovateJob
+metadata:
+  name: renovate
+  namespace: renovate-operator
+spec:
+  schedule: "0 2 * * *"
+  secretRef: renovate-secret
+  provider:
+    name: github
+  image: ghcr.io/renovatebot/renovate:latest
+  parallelism: 1
+  discoveryFilters:
+    - "*"
