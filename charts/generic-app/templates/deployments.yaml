@@ -51,6 +51,9 @@ spec:
       {{- if not (kindIs "invalid" $d.terminationGracePeriodSeconds) }}
       terminationGracePeriodSeconds: {{ $d.terminationGracePeriodSeconds }}
       {{- end }}
+      {{- if not (kindIs "invalid" $d.enableServiceLinks) }}
+      enableServiceLinks: {{ $d.enableServiceLinks }}
+      {{- end }}
       {{- with $d.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -139,10 +142,6 @@ spec:
       {{- end }}
       {{- with $d.topologySpreadConstraints }}
       topologySpreadConstraints:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $d.enableServiceLinks }}
-      enableServiceLinks: 
         {{- toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}
