@@ -25,4 +25,4 @@ services:
     create: false        
     expose:
       type: lan
-      port: 8000       
+      port: http       
