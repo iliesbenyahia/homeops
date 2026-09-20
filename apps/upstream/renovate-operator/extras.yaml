@@ -12,8 +12,8 @@ externalSecrets:
           key: github-com-token
 
 services:
-  renovate-operator: :
-    create: false        # le Service existe déjà, on ne le génère pas
+  renovate-operator:
+    create: false        
     expose:
       type: lan
-      port: 8000         # obligatoire : la chart n'a pas de `ports` à lire
+      port: 8000       
