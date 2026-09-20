@@ -130,6 +130,10 @@ services: {}
   #   enabled: true
   #   type: ClusterIP
   #   deployment: web              # défaut = même clé que le service
+  #   create: true                 # false = ne génère PAS le Service (il existe déjà),
+  #                                # mais génère quand même expose (IngressRoute, Certificate...).
+  #                                # Dans ce cas : `name` = nom du Service existant si différent
+  #                                # de la clé, et expose.port est obligatoire.
   #   # selector: {}               # remplace la sélection automatique
   #   labels: {}
   #   annotations: {}
@@ -141,6 +145,14 @@ services: {}
   #
   #   # Exposition : crée une IngressRoute + un Certificate cert-manager.
   #   # Forme courte : expose: lan   (ou expose: public, ou expose: true = profil par défaut)
+  #   # Plusieurs expositions (ex: LAN + public, domaines différents) : expose devient une liste.
+  #   # Les ressources sont alors nommées <service>-<type> (ou <service>-<id> si `id` est fourni).
+  #   expose:
+  #     - lan                      # -> <service>.<domaine lan>
+  #     - type: public
+  #       host: www                # -> www.<domaine public>
+  #
+  #   # Exposition unique, forme détaillée :
   #   expose:
   #     type: lan                  # nom d'un profil de global.expose.profiles
   #     host: web                  # sous-domaine, défaut = clé du service -> web.<domain>
@@ -180,7 +192,7 @@ ingressRoutes: {}
   #           port: 80
   #   tls:                         # omis = pas de bloc tls ; {} = certificat par défaut
   #     certResolver: letsencrypt
-
+  
 # ---------------------------------------------------------------------------
 # PersistentVolumeClaims
 # ---------------------------------------------------------------------------

@@ -67,7 +67,6 @@ externalSecrets:
       - secretKey: PAPERLESS_SECRET_KEY
         remoteRef:
           key: paperless-secret-key
-          property: password
 
 services:
   valkey:

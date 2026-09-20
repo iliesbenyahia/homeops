@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: upstream-apps
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/iliesbenyahia/homeops.git
+        revision: HEAD
+        files:
+          - path: apps/upstream/*/config.yaml
+  template:
+    metadata:
+      name: '{{.name}}'
+    spec:
+      project: "default"
+      sources:
+        - repoURL: "{{ .chart.repoURL }}"
+          chart: "{{ .chart.name }}"
+          targetRevision: "{{ .chart.version }}"
+          helm:
+            releaseName: "{{ .name }}"
+            valueFiles:
+              - "$values/apps/upstream/{{ .name }}/values.yaml"
+        - repoURL: https://github.com/<vous>/<votre-depot>.git
+          targetRevision: HEAD
+          path: charts/generic-app
+          helm:
+            releaseName: "{{ .name }}-extras"
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - "$values/apps/upstream/{{ .name }}/extras.yaml"
+        - repoURL: https://github.com/<vous>/<votre-depot>.git
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.path.basename}}'
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true

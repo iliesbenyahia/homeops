@@ -1,0 +1,6 @@
+name: renovate-operator
+namespace: renovate-operator
+chart:
+  repoURL: ghcr.io/mogenius/helm-charts
+  name: renovate-operator
+  version: 6.3.0

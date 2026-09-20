@@ -1,5 +1,6 @@
 {{- range $key, $s := .Values.services }}
 {{- if include "app.enabled" $s }}
+{{- if or (not (hasKey $s "create")) $s.create }}
 {{- $name := include "app.name" (list $key $s) }}
 {{- $selector := $s.selector }}
 {{- if not $selector }}
@@ -43,5 +44,6 @@ spec:
     {{- end }}
   selector:
     {{- toYaml $selector | nindent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}

@@ -64,7 +64,10 @@ Les paramètres viennent du profil (global.expose.profiles.<type>), surchargeabl
 {{- /* Port du backend : port explicite, sinon premier port du service */ -}}
 {{- $port := $x.port }}
 {{- if not $port }}
-  {{- $port = (index (required (printf "services.%s.ports est requis" $key) $s.ports) 0).port }}
+  {{- if not $s.ports }}
+    {{- fail (printf "services.%s.expose : 'port' requis quand le service n'a pas de 'ports' (ex: avec create: false)" $key) }}
+  {{- end }}
+  {{- $port = (index $s.ports 0).port }}
 {{- end }}
 
 {{- /* Middlewares : ceux du profil + ceux de l'exposition */ -}}
@@ -134,7 +137,7 @@ metadata:
 spec:
   secretName: {{ $secretName }}
   dnsNames:
-    - "*.ibenyahia.fr"
+    - {{ $host | quote }}
   issuerRef:
     {{- toYaml (required (printf "services.%s.expose : issuerRef requis (global.expose.profiles.%s.certificate.issuerRef)" $key $type) $cert.issuerRef) | nindent 4 }}
   {{- with omit $cert "enabled" "secretName" "issuerRef" "dnsNames" "annotations" }}

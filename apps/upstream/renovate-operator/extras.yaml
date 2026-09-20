@@ -1,0 +1,19 @@
+externalSecrets:
+  renovate-secret:
+    data:
+      - secretKey: GITHUB_COM_USER
+        remoteRef:
+          key: github-com-user
+      - secretKey: GITHUB_COM_TOKEN
+        remoteRef:
+          key: github-com-token
+      - secretKey: RENOVATE_TOKEN
+        remoteRef:
+          key: github-com-token
+
+services:
+  renovate-operator: :
+    create: false        # le Service existe déjà, on ne le génère pas
+    expose:
+      type: lan
+      port: 8000         # obligatoire : la chart n'a pas de `ports` à lire
