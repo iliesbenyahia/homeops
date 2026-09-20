@@ -9,6 +9,6 @@ spec:
   provider:
     name: github
   image: ghcr.io/renovatebot/renovate:latest
-  parallelism: 1
+  parallelism: 5
   discoveryFilters:
     - "*"
