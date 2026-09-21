@@ -1,0 +1,6 @@
+name: external-secrets
+namespace: external-secrets
+chart:
+  repoURL: https://charts.external-secrets.io
+  name: external-secrets
+  version: 1.2.0
