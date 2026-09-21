@@ -20,7 +20,7 @@
       "description": "Dépôts Helm classiques dans apps/upstream/*/config.yaml",
       "managerFilePatterns": ["/^apps/upstream/.*/config\\.yaml$/"],
       "matchStrings": [
-        "repoURL:\\s*(?<registryUrl>https?://(?!.*oci://)\\S+)\\s+name:\\s*(?<depName>\\S+)\\s+version:\\s*(?<currentValue>\\S+)"
+        "repoURL:\\s*(?<registryUrl>https?://\\S+)\\s+name:\\s*(?<depName>\\S+)\\s+version:\\s*(?<currentValue>\\S+)"
       ],
       "datasourceTemplate": "helm",
       "registryUrlTemplate": "{{{registryUrl}}}",
