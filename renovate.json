@@ -2,16 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "timezone": "Europe/Paris",
-  "argocd": {
-    "managerFilePatterns": ["/^appsets/.*\\.ya?ml$/"]
-  },
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Version des charts OCI dans apps/upstream/*/config.yaml",
+      "description": "Charts OCI dans apps/upstream/*/config.yaml",
       "managerFilePatterns": ["/^apps/upstream/.*/config\\.yaml$/"],
       "matchStrings": [
-        "repoURL:\\s*(?<registry>\\S+)\\s+name:\\s*(?<chart>\\S+)\\s+version:\\s*(?<currentValue>\\S+)"
+        "repoURL:\\s*oci://(?<registry>\\S+)\\s+name:\\s*(?<chart>\\S+)\\s+version:\\s*(?<currentValue>\\S+)"
       ],
       "datasourceTemplate": "docker",
       "packageNameTemplate": "{{{registry}}}/{{{chart}}}",
@@ -20,7 +17,18 @@
     },
     {
       "customType": "regex",
-      "description": "Images dans les CR bruts (RenovateJob, etc.)",
+      "description": "Dépôts Helm classiques dans apps/upstream/*/config.yaml",
+      "managerFilePatterns": ["/^apps/upstream/.*/config\\.yaml$/"],
+      "matchStrings": [
+        "repoURL:\\s*(?<registryUrl>https?://(?!.*oci://)\\S+)\\s+name:\\s*(?<depName>\\S+)\\s+version:\\s*(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "{{{registryUrl}}}",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Images dans les CR bruts",
       "managerFilePatterns": ["/^apps/.*/manifests/.*\\.ya?ml$/"],
       "matchStrings": [
         "image:\\s*(?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)"
