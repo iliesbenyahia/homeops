@@ -1,0 +1,7 @@
+services:
+  longhorn-frontend:
+    create: false        
+    expose:
+      host: longhorn
+      type: lan
+      port: http   
