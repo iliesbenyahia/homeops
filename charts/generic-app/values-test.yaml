@@ -1,0 +1,7 @@
+services:
+  argocd-server:
+    create: false        
+    expose:
+      host: argocd
+      type: lan
+      port: 80   
