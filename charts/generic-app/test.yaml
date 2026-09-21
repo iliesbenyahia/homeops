@@ -1,30 +1,171 @@
 ---
-# Source: generic-app/templates/expose.yaml
-apiVersion: cert-manager.io/v1
-kind: Certificate
+# Source: generic-app/templates/pvcs.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: argocd-server
+  name: pocketid-data
   labels:
-    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/name: pocketid-data
     app.kubernetes.io/part-of: release-name
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: generic-app-0.3.2
 spec:
-  secretName: argocd-server-tls
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "5Gi"
+
+---
+# Source: generic-app/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: pocketid
+  labels:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  type: ClusterIP
+  ports:
+    - port: 1411
+      targetPort: 1411
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+---
+# Source: generic-app/templates/deployments.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pocketid
+  labels:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pocketid
+      app.kubernetes.io/part-of: release-name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pocketid
+        app.kubernetes.io/part-of: release-name
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: generic-app-0.3.2
+    spec:
+      containers:
+        - name: pocketid
+          image: "pocketid/pocket-id:v2.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1411
+              name: http
+          env:
+            - name: APP_URL
+              value: https://auth.ibenyahia.fr
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: encryption-key
+                  name: pocketid-secret
+          livenessProbe:
+            exec:
+              command:
+              - /app/pocket-id
+              - healthcheck
+            failureThreshold: 2
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 5
+          volumeMounts:
+            - mountPath: /app/data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pocketid-data
+
+---
+# Source: generic-app/templates/expose.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pocketid-lan
+  labels:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  secretName: pocketid-lan-tls
   dnsNames:
-    - "argocd.ibenyahia.fr"
+    - "auth.ibenyahia.fr"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-cloudflare
 
 ---
 # Source: generic-app/templates/expose.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pocketid-public
+  labels:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  secretName: pocketid-public-tls
+  dnsNames:
+    - "auth.ibenyahia.fr"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-cloudflare
+
+---
+# Source: generic-app/templates/externalsecrets.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: pocketid-secret
+  labels:
+    app.kubernetes.io/name: pocketid-secret
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
+  target:
+    creationPolicy: Owner
+    name: pocketid-secret
+  data:
+    - remoteRef:
+        key: pocketid-secret-encryption-key
+      secretKey: encryption-key
+
+---
+# Source: generic-app/templates/expose.yaml
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: argocd-server
+  name: pocketid-lan
   labels:
-    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/name: pocketid
     app.kubernetes.io/part-of: release-name
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: generic-app-0.3.2
@@ -33,21 +174,21 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: "Host(`argocd.ibenyahia.fr`)"
+      match: "Host(`auth.ibenyahia.fr`)"
       services:
-        - name: argocd-server
-          port: 80
+        - name: pocketid
+          port: 1411
   tls:
-    secretName: argocd-server-tls
+    secretName: pocketid-lan-tls
 
 ---
 # Source: generic-app/templates/expose.yaml
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: argocd-server-http
+  name: pocketid-lan-http
   labels:
-    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/name: pocketid
     app.kubernetes.io/part-of: release-name
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: generic-app-0.3.2
@@ -56,9 +197,55 @@ spec:
     - web
   routes:
     - kind: Rule
-      match: "Host(`argocd.ibenyahia.fr`)"
+      match: "Host(`auth.ibenyahia.fr`)"
       middlewares:
-        - name: argocd-server-redirect-https
+        - name: pocketid-lan-redirect-https
+      services:
+        - name: noop@internal
+          kind: TraefikService
+
+---
+# Source: generic-app/templates/expose.yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pocketid-public
+  labels:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  entryPoints:
+    - websecure-pub
+  routes:
+    - kind: Rule
+      match: "Host(`auth.ibenyahia.fr`)"
+      services:
+        - name: pocketid
+          port: 1411
+  tls:
+    secretName: pocketid-public-tls
+
+---
+# Source: generic-app/templates/expose.yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pocketid-public-http
+  labels:
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  entryPoints:
+    - web-pub
+  routes:
+    - kind: Rule
+      match: "Host(`auth.ibenyahia.fr`)"
+      middlewares:
+        - name: pocketid-public-redirect-https
       services:
         - name: noop@internal
           kind: TraefikService
@@ -67,9 +254,25 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: argocd-server-redirect-https
+  name: pocketid-lan-redirect-https
   labels:
-    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/name: pocketid
+    app.kubernetes.io/part-of: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: generic-app-0.3.2
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+
+---
+# Source: generic-app/templates/expose.yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: pocketid-public-redirect-https
+  labels:
+    app.kubernetes.io/name: pocketid
     app.kubernetes.io/part-of: release-name
     app.kubernetes.io/managed-by: Helm
     helm.sh/chart: generic-app-0.3.2
