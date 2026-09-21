@@ -1,0 +1,54 @@
+deployments:
+  pocketid:
+    image:
+      repository: pocketid/pocket-id
+      tag: "v2.16.0"
+    ports:
+      - name: http
+        containerPort: 1411
+    volumeMounts:
+      - { name: data, mountPath: /app/data }
+    volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: pocketid-data
+    env: 
+      - name: APP_URL
+        value: "https://auth.ibenyahia.fr"
+      - name: ENCRYPTION_KEY
+        valueFrom:
+          secretKeyRef:
+            name: pocketid-secret
+            key: encryption-key
+    livenessProbe:
+      exec:
+        command: ["/app/pocket-id", "healthcheck"]
+      initialDelaySeconds: 10
+      periodSeconds: 60
+      timeoutSeconds: 5
+      failureThreshold: 2
+    
+externalSecrets:
+  pocketid-secret:
+    data:
+      - secretKey: encryption-key
+        remoteRef:
+          key: pocketid-secret-encryption-key
+
+services:
+  pocketid:
+    enabled: true
+    ports:
+      - port: 1411
+        targetPort: 1411
+    expose:
+      - lan
+        host: auth                # -> https://blog.home.example.com (blog-lan)
+      - type: public
+        host: auth   
+
+
+persistentVolumeClaims:
+  pocketid-data:
+    enabled: true
+    size: 5Gi

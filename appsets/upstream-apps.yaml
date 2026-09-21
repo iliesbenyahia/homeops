@@ -11,6 +11,7 @@ spec:
         revision: HEAD
         files:
           - path: apps/upstream/*/config.yaml
+        requeueAfterSeconds: 60
   template:
     metadata:
       name: '{{.name}}'
