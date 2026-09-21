@@ -34,7 +34,7 @@ spec:
             - "$values/apps/upstream/{{ .name }}/generic-values.yaml"
       - repoURL: https://github.com/iliesbenyahia/homeops.git
         targetRevision: HEAD
-        path: apps/upstream/renovate-operator/manifests
+        path: apps/upstream/{{ .name }}/manifests
       - repoURL: https://github.com/iliesbenyahia/homeops.git
         targetRevision: HEAD
         ref: values
