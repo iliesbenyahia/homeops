@@ -42,8 +42,8 @@ services:
       - port: 1411
         targetPort: 1411
     expose:
-      - lan
-        host: auth                # -> https://blog.home.example.com (blog-lan)
+      - type: lan
+        host: auth      
       - type: public
         host: auth   
 
