@@ -1,0 +1,6 @@
+name: satisfactory-server
+namespace: satisfactory-server
+chart:
+  repoURL: https://josh-nzl.github.io/satisfactory-server
+  name: satisfactory-server
+  version: 0.1.6

@@ -1,0 +1,10 @@
+  persistence:
+    config:
+      storageClass: "longhorn"
+    gamefiles:
+      storageClass: "longhorn"
+  service:
+    type: ClusterIP
+  tls:
+    enabled: true
+    existingSecret: "satisfactory-tls"

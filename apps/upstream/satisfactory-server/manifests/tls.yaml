@@ -1,0 +1,11 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: satisfactory-tls
+spec:
+  secretName: satisfactory-tls
+  dnsNames:
+    - satisfactory.ibenyahia.fr 
+  issuerRef:
+    name: letsencrypt-cloudflare
+    kind: ClusterIssuer
