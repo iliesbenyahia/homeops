@@ -3,4 +3,4 @@ namespace: longhorn
 chart:
   repoURL: https://charts.longhorn.io
   name: longhorn
-  version: 1.12.1
+  version: 1.13.0
