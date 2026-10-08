@@ -39,8 +39,6 @@ deployments:
     - secretRef:
         name: paperless-secret
     enableServiceLinks: false
-    strategy:
-      type: Recreate
   valkey:
     image:
       repository: valkey/valkey
