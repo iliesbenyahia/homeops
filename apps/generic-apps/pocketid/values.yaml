@@ -27,6 +27,8 @@ deployments:
       periodSeconds: 60
       timeoutSeconds: 5
       failureThreshold: 2
+    strategy:
+      type: Recreate
     
 externalSecrets:
   pocketid-secret:
