@@ -25,11 +25,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.jellyswarm.auth.secretName }}
                   key: JELLYSWARRM_USERNAME
-            - name: JELLYSWARRM_PASSWORD
+            - name: JELLYSWARRM_PASSWOR
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.jellyswarm.auth.secretName }}
-                  key: JELLYSWARRM_PASSWORD
+                  key: JELLYSWARRM_PASSWORD 
           ports:
             - containerPort: 3000
           volumeMounts:
