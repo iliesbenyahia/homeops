@@ -186,4 +186,8 @@ rustatio:
     limits:
       cpu: 500m
       memory: 512Mi
+
+jellyswarm:
+  auth:
+    secretName: jellyswarm-auth
  

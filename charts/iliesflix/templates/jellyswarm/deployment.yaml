@@ -18,12 +18,18 @@ spec:
     spec:
       containers:
         - name: jellyswarm
-          image: ghcr.io/llukas22/jellyswarrm:latest
+          image: ghcr.io/llukas22/jellyswarrm:0:3:1
           env:
-            - name: JELLYSWARRM_USERNAME
-              value: admin
-            - name: JELLYSWARRM_PASSWORD
-              value: jellyswarm
+            - name: JELLYSWARM_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.jellyswarm.auth.secretName }}
+                  key: JELLYSWARM_USERNAME
+            - name: JELLYSWARM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.jellyswarm.auth.secretName }}
+                  key: JELLYSWARM_PASSWORD
           ports:
             - containerPort: 3000
           volumeMounts:
