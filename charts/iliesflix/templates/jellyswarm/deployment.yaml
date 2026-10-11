@@ -20,12 +20,12 @@ spec:
         - name: jellyswarm
           image: ghcr.io/llukas22/jellyswarrm:0.3.1
           env:
-            - name: JELLYSWARM_USERNAME
+            - name: JELLYSWARRM_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.jellyswarm.auth.secretName }}
-                  key: JELLYSWARM_USERNAME
-            - name: JELLYSWARM_PASSWORD
+                  key: JELLYSWARRM_USERNAME
+            - name: JELLYSWARRM_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.jellyswarm.auth.secretName }}
