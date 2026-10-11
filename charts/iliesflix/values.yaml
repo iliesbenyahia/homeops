@@ -101,7 +101,7 @@ jellyfin:
 seerr:
   host: "seerr.ibenyahia.fr"
   enabled: true
-  image: ghcr.io/seerr-team/seerr:release-v3.5.0
+  image: ghcr.io/seerr-team/seerr:v3.5.0
   configSize: 512Mi
   logLevel: "info"
   resources:
