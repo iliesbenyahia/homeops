@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: jellyswarm
-          image: ghcr.io/llukas22/jellyswarrm:0:3:1
+          image: ghcr.io/llukas22/jellyswarrm:0.3.1
           env:
             - name: JELLYSWARM_USERNAME
               valueFrom:
