@@ -6,8 +6,9 @@ metadata:
 spec:
   entryPoints:
     - websecure-pub
+    - websecure
   routes:
-    - match: "Host(`jellyswarm.ibenyahia.fr`)"
+    - match: "Host(`copainflix.ibenyahia.fr`)"
       kind: Rule
       services:
         - name: jellyswarm
