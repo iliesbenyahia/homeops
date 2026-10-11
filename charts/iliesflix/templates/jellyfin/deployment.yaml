@@ -27,6 +27,11 @@ spec:
                     operator: In
                     values:
                       - {{ .Values.jellyfin.nodeRole | default "jellyfin" | quote }}
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: jellyfin
+          effect: NoSchedule
       securityContext:
         fsGroup: {{ .Values.global.pgid }}
         supplementalGroups:

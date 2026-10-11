@@ -1,1 +1,24 @@
 namespaceOverride: longhorn
+longhornManager:
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: jellyfin
+      effect: NoSchedule
+
+longhornDriver:
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: jellyfin
+      effect: NoSchedule
+
+longhornUI:
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: jellyfin
+      effect: NoSchedule
+
+defaultSettings:
+  taintToleration: "dedicated=jellyfin:NoSchedule"
