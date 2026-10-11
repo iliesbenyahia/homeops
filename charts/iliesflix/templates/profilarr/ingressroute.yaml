@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: profilarr-headers
+  namespace: {{ .Release.Namespace }}
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: profilarr
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ .Values.ingress.entrypoint }}
+  routes:
+    - match: "Host(`{{ .Values.profilarr.host }}`)"
+      kind: Rule
+      middlewares:
+        - name: profilarr-headers
+      services:
+        - name: profilarr
+          port: 6868

@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: radarr
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ .Values.ingress.entrypoint }}
+  routes:
+    - match: "Host(`{{ .Values.radarr.host }}`)"
+      kind: Rule
+      services:
+        - name: radarr
+          port: 7878
+  tls:
+    secretName: iliesflix-tls

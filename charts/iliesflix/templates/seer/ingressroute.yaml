@@ -1,0 +1,31 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: seerr
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ .Values.ingress.entrypoint }}
+  routes:
+    - match: "Host(`{{ .Values.seerr.host }}`)"
+      kind: Rule
+      services:
+        - name: seerr
+          port: 5055
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: seerr-pub
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - websecure-pub
+  routes:
+    - match: "Host(`ask-iliesflix.ibenyahia.fr`)"
+      kind: Rule
+      services:
+        - name: seerr
+          port: 5055
+  tls:
+    secretName: iliesflix-tls

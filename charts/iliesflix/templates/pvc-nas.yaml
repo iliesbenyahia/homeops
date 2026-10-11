@@ -1,0 +1,14 @@
+# PVC partagé monté par sonarr, radarr, qbittorrent, jellyfin
+# Pointe vers le NFS via la StorageClass nfs-client
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iliesflix-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: {{ .Values.nas.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.nas.size }}

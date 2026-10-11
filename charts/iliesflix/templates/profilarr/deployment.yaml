@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profilarr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: profilarr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: profilarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: profilarr
+    spec:
+      containers:
+        - name: parser
+          image: {{ .Values.profilarr.parserImage }}
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+
+        - name: profilarr
+          image: {{ .Values.profilarr.image }}
+          env:
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+            - name: PARSER_HOST
+              value: "localhost"
+            - name: PARSER_PORT
+              value: "5000"
+            {{- if .Values.profilarr.origin }}
+            - name: ORIGIN
+              value: {{ .Values.profilarr.origin | quote }}
+            {{- end }}
+          ports:
+            - containerPort: 6868
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources: {{- toYaml .Values.profilarr.resources | nindent 12 }}
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: profilarr-config

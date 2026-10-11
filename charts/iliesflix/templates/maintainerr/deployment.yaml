@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintainerr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: maintainerr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: maintainerr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: maintainerr
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: maintainerr
+          image: {{ .Values.maintainerr.image }}
+          env:
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 6246
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: 6246
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: 6246
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources: {{- toYaml .Values.maintainerr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /opt/data
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: maintainerr-config

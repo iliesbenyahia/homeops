@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gluetun-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+  port-update.sh: |
+{{ .Files.Get "files/gluetune-scripts/port-update.sh" | indent 4 }}

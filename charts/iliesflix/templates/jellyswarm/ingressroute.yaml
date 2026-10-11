@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jellyswarm-pub
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - websecure-pub
+  routes:
+    - match: "Host(`jellyswarm.ibenyahia.fr`)"
+      kind: Rule
+      services:
+        - name: jellyswarm
+          port: 3000
+  tls:
+    secretName: iliesflix-tls

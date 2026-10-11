@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: seerr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: seerr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seerr
+  template:
+    metadata:
+      labels:
+        app: seerr
+    spec:
+      # Seerr tourne rootless nativement depuis v3
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: seerr
+          image: {{ .Values.seerr.image }}
+          # init requis pour la gestion des signaux
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.seerr.logLevel | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 5055
+          livenessProbe:
+            httpGet:
+              path: /api/v1/status
+              port: 5055
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v1/status
+              port: 5055
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources: {{- toYaml .Values.seerr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config   # ← chemin officiel Seerr (≠ jellyseerr /config)
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: seerr-config

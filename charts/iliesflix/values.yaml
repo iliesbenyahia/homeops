@@ -1,0 +1,189 @@
+global:
+  timezone: "Europe/Paris"
+  puid: "1000"
+  pgid: "1000"
+  umask: "002"
+
+ingress:
+  entrypoint: websecure
+
+nas:
+  storageClass: nfs-client
+  size: 800Gi
+
+config:
+  storageClass: longhorn   # remplace par local-path ou openebs si dispo
+
+sonarr:
+  host: "sonarr.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/hotio/sonarr:latest
+  configSize: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+radarr:
+  host: "radarr.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/hotio/radarr:latest
+  configSize: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+prowlarr:
+  host: "prowlarr.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/hotio/prowlarr:latest
+  configSize: 512Mi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+bazarr:
+  host: "bazarr.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/hotio/bazarr:latest
+  configSize: 512Mi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+qbittorrent:
+  enabled: true
+  image: ghcr.io/hotio/qbittorrent:latest
+  configSize: 1Gi
+  host: "qbittorrent.ibenyahia.fr"
+  vpnSecret: wireguard-private-key
+  vpn:
+    serverCountry: "Switzerland,France,Germany,UK,Netherlands,Sweden,Norway,Finland"
+    firewallSubnets: "10.42.0.0/16,10.43.0.0/16,192.168.1.0/24"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi   
+
+jellyfin:
+  host: "jellyfin.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/hotio/jellyfin:release-v12.2
+  configSize: 10Gi
+  gpu: true 
+  renderGID: 991
+  resources:
+    requests:
+      cpu: 2
+      memory: 2Gi
+    limits:
+      cpu: 4
+      memory: 8Gi
+
+seerr:
+  host: "seerr.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/seerr-team/seerr:release-v3.5.0
+  configSize: 512Mi
+  logLevel: "info"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+flaresolverr:
+  enabled: false
+  image: ghcr.io/flaresolverr/flaresolverr:latest
+  host: "flaresolverr.ibenyahia.fr"
+  port: 8191
+  logLevel: "info"
+  logHtml: "true"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+profilarr:
+  enabled: true
+  image: ghcr.io/dictionarry-hub/profilarr:2.2.0
+  parserImage: ghcr.io/dictionarry-hub/profilarr-parser:2.2.0
+  configSize: 512Mi
+  host: "profilarr.ibenyahia.fr"
+  origin: "https://profilarr.ibenyahia.fr"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi   
+
+maintainerr:
+  host: "maintainerr.ibenyahia.fr"
+  enabled: true
+  configSize: 512Mi
+  image: ghcr.io/maintainerr/maintainerr:3.30.1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+cleanuparr:
+  host: "cleanuparr.ibenyahia.fr"
+  enabled: true
+  configSize: 512Mi
+  image: ghcr.io/cleanuparr/cleanuparr:2.10.9
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+rustatio:
+  host: "rustatio.ibenyahia.fr"
+  enabled: true
+  image: ghcr.io/takitsu21/rustatio:2.11.0
+  configSize: 512Mi
+  port: 8080
+  auth:
+    enabled: false
+    secretName: rustatio-auth-token
+  watchFolder:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+ 

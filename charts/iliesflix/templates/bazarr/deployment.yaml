@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazarr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: bazarr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bazarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bazarr
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.global.pgid }}
+      containers:
+        - name: bazarr
+          image: {{ .Values.bazarr.image }}
+          env:
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: {{ .Values.global.pgid | quote }}
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 6767
+          livenessProbe:
+            httpGet:
+              path: /bazarr/ping
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources: {{- toYaml .Values.bazarr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: nas
+              mountPath: /data
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: bazarr-config
+        - name: nas
+          persistentVolumeClaim:
+            claimName: iliesflix-data
+

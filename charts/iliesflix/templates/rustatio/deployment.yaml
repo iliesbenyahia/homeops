@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rustatio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: rustatio
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rustatio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rustatio
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.global.pgid }}
+      containers:
+        - name: rustatio
+          image: {{ .Values.rustatio.image }}
+          env:
+            - name: PORT
+              value: {{ .Values.rustatio.port | quote }}
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: {{ .Values.global.pgid | quote }}
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+            {{- if .Values.rustatio.auth.enabled }}
+            - name: AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rustatio.auth.secretName }}
+                  key: AUTH_TOKEN
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.rustatio.port }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.rustatio.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources: {{- toYaml .Values.rustatio.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /data
+            {{- if .Values.rustatio.watchFolder.enabled }}
+            - name: nas
+              mountPath: /torrents
+              subPath: torrents
+            {{- end }}
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: rustatio-config
+        {{- if .Values.rustatio.watchFolder.enabled }}
+        - name: nas
+          persistentVolumeClaim:
+            claimName: nas-data
+        {{- end }}

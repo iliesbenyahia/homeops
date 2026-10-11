@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: radarr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.global.pgid }}
+      containers:
+        - name: radarr
+          image: {{ .Values.radarr.image }}
+          env:
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: {{ .Values.global.pgid | quote }}
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 7878
+          livenessProbe:
+            httpGet:
+              path: /radarr/ping
+              port: 7878
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources: {{- toYaml .Values.radarr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: nas
+              mountPath: /data
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: radarr-config
+        - name: nas
+          persistentVolumeClaim:
+            claimName: iliesflix-data

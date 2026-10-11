@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prowlarr
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ .Values.ingress.entrypoint }}
+  routes:
+    - match: "Host(`{{ .Values.prowlarr.host }}`)"
+      kind: Rule
+      services:
+        - name: prowlarr
+          port: 9696
+  tls:
+    secretName: iliesflix-tls

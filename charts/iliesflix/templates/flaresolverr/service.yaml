@@ -1,0 +1,13 @@
+{{- if .Values.flaresolverr.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaresolverr
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: flaresolverr
+  ports:
+    - port: 8191
+      targetPort: 8191
+{{- end }}

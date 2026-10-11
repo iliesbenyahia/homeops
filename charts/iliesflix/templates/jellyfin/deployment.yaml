@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: jellyfin
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: role
+                    operator: In
+                    values:
+                      - {{ .Values.jellyfin.nodeRole | default "jellyfin" | quote }}
+      securityContext:
+        fsGroup: {{ .Values.global.pgid }}
+        supplementalGroups:
+          - {{ .Values.jellyfin.renderGID | required "jellyfin.renderGID (GID du groupe render sur le nœud N150, via `getent group render`)" }}
+      containers:
+        - name: jellyfin
+          securityContext:
+            privileged: true
+          image: {{ .Values.jellyfin.image }}
+          env:
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: "991"
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 8096
+          resources: {{- toYaml .Values.jellyfin.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: nas
+              mountPath: /data
+            - name: dri
+              mountPath: /dev/dri/renderD128  
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config
+        - name: nas
+          persistentVolumeClaim:
+            claimName: iliesflix-data
+        - name: dri
+          hostPath:
+            path: /dev/dri/renderD128
+            type: CharDevice

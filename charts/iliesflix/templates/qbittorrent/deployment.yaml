@@ -1,0 +1,118 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: qbittorrent
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qbittorrent
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: gluetun
+          image: qmcgaw/gluetun:latest
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "(ip rule del table 51820; ip -6 rule del table 51820) || true"]
+          securityContext:
+            capabilities:
+              add: [NET_ADMIN]
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: protonvpn
+            - name: VPN_TYPE
+              value: wireguard
+            - name: DOT
+              value: "off"
+            - name: BLOCK_MALICIOUS
+              value: "off"
+            - name: DNS_ADDRESS
+              value: "1.1.1.1"  
+            - name: VPN_PORT_FORWARDING
+              value: "on"
+            - name: VPN_PORT_FORWARDING_PROVIDER
+              value: "protonvpn"
+            - name: PORT_FORWARD_ONLY
+              value: "on"
+            - name: VPN_PORT_FORWARDING_UP_COMMAND
+              value: '/bin/sh /scripts/port-update.sh {{ "{{PORT}}" }} {{ "{{VPN_INTERFACE}}" }}'
+            - name: FIREWALL_INPUT_PORTS
+              value: "8080"   
+            - name: WIREGUARD_PRIVATE_KEY 
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.qbittorrent.vpnSecret }}
+                  key: wireguard-private-key
+            - name: SERVER_COUNTRIES
+              value: {{ .Values.qbittorrent.vpn.serverCountry | quote }}
+            - name: FIREWALL
+              value: "on"
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: {{ .Values.qbittorrent.vpn.firewallSubnets | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+            - name: IP6TABLES_ENABLED
+              value: "false"
+          volumeMounts:
+            - name: gluetun-scripts
+              mountPath: /scripts
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi  # ← monte à 256Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi  # ← monte à 512Mi
+
+        - name: qbittorrent
+          image: {{ .Values.qbittorrent.image }}
+          env:
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: {{ .Values.global.pgid | quote }}
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+            - name: WEBUI_PORT
+              value: "8080"
+          ports:
+            - containerPort: 8080
+            - containerPort: 6881
+              protocol: TCP
+            - containerPort: 6881
+              protocol: UDP
+          volumeMounts:
+            - name: config
+              mountPath: /config 
+            - name: nas
+              mountPath: /data/torrents
+              subPath: torrents
+          resources: {{- toYaml .Values.qbittorrent.resources | nindent 12 }}
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: nas
+          persistentVolumeClaim:
+            claimName: iliesflix-data
+        - name: gluetun-scripts
+          configMap:
+            name: gluetun-scripts
+            defaultMode: 0755

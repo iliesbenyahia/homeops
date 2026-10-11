@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rustatio
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ .Values.ingress.entrypoint }}
+  routes:
+    - match: "Host(`{{ .Values.rustatio.host }}`)"
+      kind: Rule
+      services:
+        - name: rustatio
+          port: {{ .Values.rustatio.port }}
+  tls:
+    secretName: iliesflix-tls

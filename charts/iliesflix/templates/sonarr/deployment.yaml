@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: sonarr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sonarr
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.global.pgid }}
+      containers:
+        - name: sonarr
+          image: {{ .Values.sonarr.image }}
+          env:
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: {{ .Values.global.pgid | quote }}
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 8989
+          livenessProbe:
+            httpGet:
+              path: /sonarr/ping
+              port: 8989
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources: {{- toYaml .Values.sonarr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: nas
+              mountPath: /data
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: sonarr-config
+        - name: nas
+          persistentVolumeClaim:
+            claimName: iliesflix-data

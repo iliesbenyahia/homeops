@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: prowlarr
+    app.kubernetes.io/part-of: iliesflix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowlarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: prowlarr
+    spec:
+      securityContext:
+        fsGroup: {{ .Values.global.pgid }}
+      containers:
+        - name: prowlarr
+          image: {{ .Values.prowlarr.image }}
+          env:
+            - name: PUID
+              value: {{ .Values.global.puid | quote }}
+            - name: PGID
+              value: {{ .Values.global.pgid | quote }}
+            - name: UMASK
+              value: {{ .Values.global.umask | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 9696
+          livenessProbe:
+            httpGet:
+              path: /prowlarr/ping
+              port: 9696
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources: {{- toYaml .Values.prowlarr.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: prowlarr-config
