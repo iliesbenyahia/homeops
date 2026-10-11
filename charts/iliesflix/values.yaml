@@ -86,7 +86,7 @@ qbittorrent:
 jellyfin:
   host: "jellyfin.ibenyahia.fr"
   enabled: true
-  image: ghcr.io/hotio/jellyfin:release-v12.2
+  image: ghcr.io/hotio/jellyfin:release-12.2
   configSize: 10Gi
   gpu: true 
   renderGID: 991
