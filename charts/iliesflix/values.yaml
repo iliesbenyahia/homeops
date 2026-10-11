@@ -92,8 +92,8 @@ jellyfin:
   renderGID: 991
   resources:
     requests:
-      cpu: 2
-      memory: 2Gi
+      cpu: 1
+      memory: 1Gi
     limits:
       cpu: 4
       memory: 8Gi
