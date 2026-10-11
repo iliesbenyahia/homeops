@@ -10,7 +10,9 @@ spec:
       repoURL: https://github.com/iliesbenyahia/homeops.git
       revision: HEAD
       directories:
-      - path: apps/local-charts/*
+      - path: charts/*
+      - path: charts/generic-app
+        exclude: true
   template:
     metadata:
       name: '{{.path.basename}}'
