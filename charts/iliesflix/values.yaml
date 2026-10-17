@@ -159,7 +159,7 @@ cleanuparr:
   host: "cleanuparr.ibenyahia.fr"
   enabled: true
   configSize: 512Mi
-  image: ghcr.io/cleanuparr/cleanuparr:2.10.9
+  image: ghcr.io/cleanuparr/cleanuparr:2.10.11
   resources:
     requests:
       cpu: 50m
