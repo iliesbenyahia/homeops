@@ -129,7 +129,7 @@ flaresolverr:
 
 profilarr:
   enabled: true
-  image: ghcr.io/dictionarry-hub/profilarr:2.2.0
+  image: ghcr.io/dictionarry-hub/profilarr:2.3.1
   parserImage: ghcr.io/dictionarry-hub/profilarr-parser:2.2.0
   configSize: 512Mi
   host: "profilarr.ibenyahia.fr"
