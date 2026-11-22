@@ -13,5 +13,5 @@ spec:
     remoteRef:
       conversionStrategy: Default
       decodingStrategy: None
-      key: "cloudflare-api)token"
+      key: "cloudflare-api-token"
       metadataPolicy: None
