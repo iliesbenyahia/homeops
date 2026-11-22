@@ -4,4 +4,4 @@ data:
 kind: ConfigMap
 metadata:
   name: kubevip
-  namespace: kube-vip
+  namespace: kube-system
