@@ -1,0 +1,17 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: bitwarden-secret-tester
+spec:
+  refreshInterval: 1m
+  secretStoreRef:
+    # This name must match the metadata.name in the `SecretStore`
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  data:
+  - secretKey: check-secret
+    remoteRef:
+      conversionStrategy: Default
+      decodingStrategy: None
+      key: "check-secret"
+      metadataPolicy: None
