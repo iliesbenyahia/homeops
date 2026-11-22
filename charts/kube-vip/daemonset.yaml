@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: kube-vip
     app.kubernetes.io/version: v1.3.2
   name: kube-vip
-  namespace: kube-system
+  namespace: kube-vip
 spec:
   selector:
     matchLabels:
