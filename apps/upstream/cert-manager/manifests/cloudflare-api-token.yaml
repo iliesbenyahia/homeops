@@ -9,7 +9,7 @@ spec:
     name: bitwarden-secretsmanager
     kind: ClusterSecretStore
   data:
-  - secretKey: token
+  - secretKey: api-token
     remoteRef:
       conversionStrategy: Default
       decodingStrategy: None
