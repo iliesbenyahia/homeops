@@ -1,7 +1,7 @@
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: bitwarden-secret-tester
+  name: cloudflare-api-token
 spec:
   refreshInterval: 1m
   secretStoreRef:
@@ -9,9 +9,9 @@ spec:
     name: bitwarden-secretsmanager
     kind: ClusterSecretStore
   data:
-  - secretKey: check-secret
+  - secretKey: token
     remoteRef:
       conversionStrategy: Default
       decodingStrategy: None
-      key: "check-secret"
+      key: "cloudflare-api)token"
       metadataPolicy: None

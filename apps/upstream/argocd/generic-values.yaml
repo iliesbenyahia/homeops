@@ -4,4 +4,4 @@ services:
     expose:
       host: argocd
       type: lan
-      port: 80   
+      port: 80
