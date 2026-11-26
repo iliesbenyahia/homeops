@@ -1,0 +1,6 @@
+name: jellyfin
+namespace: jellyfin
+chart:
+  repoURL: https://jellyfin.github.io/jellyfin-helm
+  name: jellyfin
+  version: 3.7.0
