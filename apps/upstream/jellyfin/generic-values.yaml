@@ -1,0 +1,11 @@
+services:
+  jellyfin:
+    enabled: true
+    ports:
+      - port: 8096
+        targetPort: 8096
+    expose:
+      - type: lan
+        host: iliesflix
+      - type: public
+        host: iliesflix  
