@@ -1,5 +1,6 @@
 services:
   jellyfin:
+    create: false
     enabled: true
     ports:
       - port: 8096
