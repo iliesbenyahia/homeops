@@ -7,6 +7,6 @@ services:
         targetPort: 8096
     expose:
       - type: lan
-        host: iliesflix
+        host: jellyfin
       - type: public
         host: iliesflix  
