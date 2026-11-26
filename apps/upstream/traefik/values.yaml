@@ -1,0 +1,7 @@
+ports: 
+  websecure-pub:
+    port: 8444
+    expose:
+      default: true
+    exposedPort: 8444
+    protocol: TCP
